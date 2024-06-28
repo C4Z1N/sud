@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sudoku</title>
+    <style>
+      * {
+        margin: 0;
+      }
+      body {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        width: 100vw;
+        padding-top: 50px;
+        gap: 30px;
+        user-select: none;
+      }
+      #board {
+        justify-content: center;
+        align-items: center;
+        width: 880px;
+        height: 838px;
+        gap: 0px;
+        display: flex;
+        flex-wrap: wrap;
+        background-color: #f3f4f5;
+      }
+      .level {
+        width: 80px;
+        height: 80px;
+        background-color: aqua;
+        color: #000;
+        border: 1px dashed black;
+        font-size: 40px;
+        font-weight: 700;
+        border-radius: 2%;
+        cursor: pointer;
+        transition: scale 0.2s ease;
+      }
+      .level:hover {
+        scale: 1.1;
+      }
+      #lov {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 838px;
+      }
+      #ove {
+        display: flex;
+        flex-direction: column;
+        height: 838px;
+        justify-content: center;
+        gap: 50px;
+      }
+      p {
+        width: 90px;
+        height: 90px;
+        display: flex;
+        background-color: #7f7f7f;
+        text-shadow: -1px 0px white, 0px 1px white, 1px 0px white,
+          0px -1px white;
+        color: #000;
+        font-size: 40px;
+        font-weight: 700;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border: 1px solid #222;
+      }
+      .difficulty {
+        width: 110px;
+        height: 80px;
+        background-color: #08bfff;
+        border: 1px solid #c0c0c0;
+        border-radius: 10px;
+        font-size: 40px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: scale 0.2s ease;
+      }
+      .difficulty:hover {
+        scale: 1.1;
+      }
+      .null:hover {
+        transition: background-color 0.2s ease, color 0.2s ease;
+        background-color: #333 !important;
+        color: #eee !important;
+        cursor: pointer;
+      }
+      #HPbar {
+        position: absolute;
+        height: 70px;
+        top: 0;
+        left: 0;
+        color: red;
+        font-size: 60px;
+        font-weight: 700;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="HPbar"></div>
+    <div id="ove">
+      <button class="difficulty easy" onclick="{sudoku('easy')}">이지</button>
+      <button class="difficulty hard" onclick="{sudoku('hard')}">하드</button>
+      <button class="difficulty" onclick="{answer()}">정답</button>
+    </div>
+    <div id="board"></div>
+    <div id="lov">
+      <button class="level" onclick="{set(1)}">1</button>
+      <button class="level" onclick="{set(2)}">2</button>
+      <button class="level" onclick="{set(3)}">3</button>
+      <button class="level" onclick="{set(4)}">4</button>
+      <button class="level" onclick="{set(5)}">5</button>
+      <button class="level" onclick="{set(6)}">6</button>
+      <button class="level" onclick="{set(7)}">7</button>
+      <button class="level" onclick="{set(8)}">8</button>
+      <button class="level" onclick="{set(9)}">9</button>
+    </div>
+    <script>
+      let sudokuBoard = createSudokuBoard();
+      answer();
+      let num = 0;
+      let HP = 0;
+      let successed = [];
+      function createSudokuBoard() {
+        const board = Array.from({ length: 9 }, () => Array(9).fill(0));
+
+        const shuffle = (arr) => {
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+          }
+        };
+
+        const isValid = (num, row, col) => {
+          // Check row
+          for (let i = 0; i < 9; i++) {
+            if (board[row][i] === num) {
+              return false;
+            }
+          }
+          // Check column
+          for (let i = 0; i < 9; i++) {
+            if (board[i][col] === num) {
+              return false;
+            }
+          }
+          // Check 3x3 square
+          const startRow = Math.floor(row / 3) * 3;
+          const startCol = Math.floor(col / 3) * 3;
+          for (let i = startRow; i < startRow + 3; i++) {
+            for (let j = startCol; j < startCol + 3; j++) {
+              if (board[i][j] === num) {
+                return false;
+              }
+            }
+          }
+          return true;
+        };
+
+        const solve = (row, col) => {
+          if (col === 9) {
+            col = 0;
+            row++;
+            if (row === 9) {
+              return true;
+            }
+          }
+          if (board[row][col] !== 0) {
+            return solve(row, col + 1);
+          }
+          const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+          shuffle(nums);
+          for (const num of nums) {
+            if (isValid(num, row, col)) {
+              board[row][col] = num;
+              if (solve(row, col + 1)) {
+                return true;
+              }
+              board[row][col] = 0;
+            }
+          }
+          return false;
+        };
+
+        solve(0, 0);
+        return board;
+      }
+
+      function answer() {
+        let boardDiv = document.getElementById("board");
+        boardDiv.innerHTML = "";
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            const node = document.createElement("p");
+            let text = document.createTextNode(sudokuBoard[i][j]);
+            node.appendChild(text);
+            boardDiv.appendChild(node);
+          }
+        }
+        document.querySelectorAll(".level").forEach((button) => {
+          button.style.backgroundColor = "black";
+          button.style.color = "white";
+        });
+        let HPs = document.getElementById("HPbar");
+        HPs.innerHTML = "";
+        document.querySelectorAll(".difficulty").forEach((button) => {
+          button.style.backgroundColor = "#08bfff";
+          if (button.textContent == "정답") {
+            button.style.backgroundColor = "#ffff00";
+          }
+        });
+      }
+
+      function sudoku(dif) {
+        sudokuBoard = createSudokuBoard();
+        set(0);
+        let boardDiv = document.getElementById("board");
+        boardDiv.innerHTML = "";
+        if (dif == "easy") {
+          setHP(3);
+          for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+              const rand = Math.floor(Math.random() * 100);
+              const node = document.createElement("p");
+              let text;
+              if (rand >= 65) {
+                text = document.createTextNode("");
+                node.classList.add("null", `i${i}`, `j${j}`);
+              } else {
+                text = document.createTextNode(`${sudokuBoard[i][j]}`);
+              }
+              node.classList.add(sudokuBoard[i][j]);
+              node.appendChild(text);
+              boardDiv.appendChild(node);
+            }
+          }
+          document.querySelectorAll(".difficulty").forEach((button) => {
+            button.style.backgroundColor = "#08bfff";
+          });
+          document.querySelector(".easy").style.backgroundColor = "#08f33f";
+          document.querySelector(".hard").style.backgroundColor = "#08bfff";
+        } else if (dif == "hard") {
+          setHP(3);
+          for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+              const rand = Math.floor(Math.random() * 100);
+              const node = document.createElement("p");
+              let text;
+              if (rand >= 45) {
+                text = document.createTextNode("");
+                node.classList.add("null", `i${i}`, `j${j}`);
+              } else {
+                text = document.createTextNode(`${sudokuBoard[i][j]}`);
+              }
+              node.classList.add(sudokuBoard[i][j]);
+              node.appendChild(text);
+              boardDiv.appendChild(node);
+            }
+          }
+          document.querySelectorAll(".difficulty").forEach((button) => {
+            button.style.backgroundColor = "#08bfff";
+          });
+          document.querySelector(".easy").style.backgroundColor = "#08bfff";
+          document.querySelector(".hard").style.backgroundColor = "#fb333f";
+        }
+        setting();
+        set(0);
+      }
+
+      function set(i) {
+        if (!successed.includes(i)) {
+          document.querySelectorAll("p").forEach((pTag) => {
+            pTag.style.color = "#000";
+            pTag.style.textShadow =
+              "-1px 0px white, 0px 1px white, 1px 0px white, 0px -1px white";
+            pTag.style.fontSize = "40px";
+          });
+          document.querySelectorAll("p.null").forEach((pTag) => {
+            pTag.style.color = "transparent";
+            pTag.style.textShadow = "none";
+            pTag.style.fontSize = "45px";
+          });
+          if (num != i) {
+            num = i;
+            document.querySelectorAll(".level").forEach((button) => {
+              if (parseInt(button.textContent) === num) {
+                button.style.backgroundColor = "yellow";
+              } else if (button.style.backgroundColor != "black") {
+                button.style.backgroundColor = "aqua";
+              }
+            });
+            document.querySelectorAll("p").forEach((pTag) => {
+              if (!pTag.classList.contains("null")) {
+                pTag.style.color = "#000";
+                pTag.style.textShadow =
+                  "-1px 0px white, 0px 1px white, 1px 0px white, 0px -1px white";
+                if (pTag.classList.contains(`${num}`)) {
+                  pTag.style.color = "#fff";
+                  pTag.style.textShadow =
+                    "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                  pTag.style.fontSize = "50px";
+                }
+                if (successed.includes(parseInt(pTag.textContent))) {
+                  switch (parseInt(pTag.textContent)) {
+                    case 1:
+                      pTag.style.color = "#ff0000";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 2:
+                      pTag.style.color = "#ff7f00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 3:
+                      pTag.style.color = "#ffff00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 4:
+                      pTag.style.color = "#00ff00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 5:
+                      pTag.style.color = "#00993f";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 6:
+                      pTag.style.color = "#007fff";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 7:
+                      pTag.style.color = "#0000ff";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 8:
+                      pTag.style.color = "#000c99";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 9:
+                      pTag.style.color = "#a901ca";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    default:
+                      pTag.style.color = "#000";
+                      pTag.style.textShadow =
+                        "-1px 0px white, 0px 1px white, 1px 0px white, 0px -1px white";
+                      break;
+                  }
+                }
+              }
+            });
+            document.querySelectorAll("p.null").forEach((pTag) => {
+              if (num != 0) pTag.textContent = num;
+              else pTag.textContent = "";
+            });
+          } else {
+            num = 0;
+            document.querySelectorAll(".level").forEach((button) => {
+              if (button.style.backgroundColor != "black") {
+                button.style.backgroundColor = "aqua";
+              }
+            });
+            document.querySelectorAll("p").forEach((pTag) => {
+              if (!pTag.classList.contains("null")) {
+                if (successed.includes(parseInt(pTag.textContent))) {
+                  switch (parseInt(pTag.textContent)) {
+                    case 1:
+                      pTag.style.color = "#ff0000";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 2:
+                      pTag.style.color = "#ff7f00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 3:
+                      pTag.style.color = "#ffff00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 4:
+                      pTag.style.color = "#00ff00";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 5:
+                      pTag.style.color = "#00993f";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 6:
+                      pTag.style.color = "#007fff";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 7:
+                      pTag.style.color = "#0000ff";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 8:
+                      pTag.style.color = "#000c99";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    case 9:
+                      pTag.style.color = "#a901ca";
+                      pTag.style.textShadow =
+                        "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                      break;
+                    default:
+                      pTag.style.color = "#000";
+                      pTag.style.textShadow =
+                        "-1px 0px white, 0px 1px white, 1px 0px white, 0px -1px white";
+                      break;
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+
+      function setHP(n) {
+        let HPs = document.getElementById("HPbar");
+        HPs.innerHTML = "";
+        HP = n;
+        for (let i = 0; i < n; i++) {
+          HPs.innerHTML += "♥";
+        }
+        for (let i = n; i < 3; i++) {
+          HPs.innerHTML += "♡";
+        }
+        if (n == 0) {
+          setTimeout(() => {
+            alert("YOU LOSE!");
+            answer();
+          }, 50);
+        }
+      }
+
+      function setting() {
+        successed = [];
+        document.querySelectorAll(".null").forEach((pTag) => {
+          pTag.addEventListener("click", () => {
+            if (num != 0) {
+              const classes = pTag.classList;
+              const is = Array.from(classes).find((c) => c.startsWith("i"));
+              const js = Array.from(classes).find((c) => c.startsWith("j"));
+              if (is && js) {
+                const oi = parseInt(is.substring(1));
+                const oj = parseInt(js.substring(1));
+                if (sudokuBoard[oi][oj] === num) {
+                  pTag.style.color = "#fff";
+                  pTag.style.textShadow =
+                    "-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black";
+                  pTag.style.fontSize = "50px";
+                  pTag.textContent = num;
+                  pTag.classList.remove("null");
+                  check(num);
+                } else {
+                  setHP(HP - 1);
+                }
+              }
+            }
+          });
+        });
+        document.querySelectorAll(".level").forEach((button) => {
+          button.style.backgroundColor = "aqua";
+          button.style.color = "#000";
+        });
+        for (let i = 1; i <= 9; i++) {
+          check(i);
+        }
+      }
+
+      function check(n) {
+        const pTags = document.querySelectorAll("p");
+        const nulls = document.querySelectorAll(".null");
+        let answers = 0;
+        pTags.forEach((pTag) => {
+          if (
+            !pTag.classList.contains("null") &&
+            pTag.classList.contains(`${n}`)
+          ) {
+            answers += 1;
+          }
+        });
+        if (answers == 9) {
+          const lovs = document.querySelectorAll(".level");
+          successed.push(n);
+          lovs.forEach((button) => {
+            if (button.textContent === n.toString()) {
+              button.style.backgroundColor = "black";
+              button.style.color = "white";
+            }
+          });
+          set(0);
+        }
+        if (nulls.length == 0) {
+          set(0);
+          setTimeout(() => {
+            alert("YOU WIN!!");
+            window.location.reload();
+          }, 50);
+        }
+      }
+    </script>
+  </body>
+</html>
